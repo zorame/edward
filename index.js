@@ -105,8 +105,6 @@ return message.channel.send("nie gra tu żadna muzyka!")
         serverQueue.connection.dispatcher.end();
     }
     function skip (message, serverQueue){
-        if(!serverQueue)
-return message.channel.send("nie gra tu żadna muzyka!")
         if(!message.member.voice.channel)
             return message.channel.send("You need to join the voice chat first");
         if(!serverQueue)
