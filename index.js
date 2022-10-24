@@ -107,6 +107,4 @@ client.on("message", async(message) => {
         serverQueue.connection.dispatcher.end();
     }
 });
-
-   
 client.login(process.env.TOKEN);
