@@ -106,23 +106,7 @@ client.on("message", async(message) => {
             return message.channel.send("There is nothing to skip!");
         serverQueue.connection.dispatcher.end();
     }
-})
-
-
-client.on("message", message  => {
-    if(message.content == 'jebac'){
-        message.channel
-            .send({
-                embed: {
-                    title: "jebac edward",
-                    description: "zareaguj by wyjebac edawrda",
-            
-                },
-    })
-            .then((message) => {
-                message.react("👌");
-            });
-        }
 });
+
    
 client.login(process.env.TOKEN);
