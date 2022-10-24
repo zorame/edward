@@ -114,20 +114,6 @@ return message.channel.send("nie gra tu żadna muzyka!")
 })
 
 
-client.on("message", message  => {
-    if(message.content == 'jebac'){
-        message.channel
-            .send({
-                embed: {
-                    title: "jebac edward",
-                    description: "zareaguj by wyjebac edawrda",
-            
-                },
-    })
-            .then((message) => {
-                message.react("👌");
-            });
-        }
-});
+
    
 client.login(process.env.token);
