@@ -1,69 +1,37 @@
 const { executionAsyncResource } = require('async_hooks');
- 
-const Discord = require('discord.js')
- 
-const client = new Discord.Client();
- 
+const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
  
-const ytSearch = require('yt-search')
+const { YTSearcher } = require('ytsearcher');
  
 const searcher = new YTSearcher({
     key: process.env.youtube_api,
     revealed: true
-})
+});
  
-const fs = require('fs');
- 
-const prefix = 'a!';
+const client = new Discord.Client();
  
 const queue = new Map();
  
-client.commands = new Discord.Collection();
-client.aliases = new Discord.Collection();
- 
-fs.readdir("./commands/", (e, f) => {
-    if(e) return console.error(e);
-    f.forEach(file => {
-        if(!file.endsWith(".js")) return
-        console.log(`${file} has been loaded!`)
-        let cmd = require(`./commands/${file}`);
-        let cmdName = cmd.config.name;
-        client.commands.set(cmdName, cmd)
-        cmd.config.aliases.forEach(alias => {
-            client.aliases.set(alias, cmdName);
-        })
-    })
+client.on("ready", () => {
+    console.log("I am online!")
 })
  
+client.on("message", async(message) => {
+    const prefix = '!';
  
-client.once('ready', () => {
-    console.log('ayaka is online!')
-})
+    const serverQueue = queue.get(message.guild.id);
  
-client.on ('message', async(message) =>{
-    if(!message.content.startsWith(prefix) || message.author.bot) return;
- 
-    const serverQueue = queue.get(message.guild.id)
-    const args = message.content.slice(prefix.length).split(/ +/);
+    const args = message.content.slice(prefix.length).trim().split(/ +/g)
     const command = args.shift().toLowerCase();
- 
-    const cmd = client.commands.get(command) || client.commands.get(client.aliases.get(command))
- 
-    if(!cmd) return
- 
-    try {
-        cmd.run(client, args, message);
-    }catch (err){
-        return console.error(err)
-    }
  
     switch(command){
         case 'play':
             execute(message, serverQueue);
             break;
-        case 'leave':
-            leave(message, serverQueue);
+        case 'stop':
+            stop(message, serverQueue);
+            break;
         case 'skip':
             skip(message, serverQueue);
             break;
@@ -72,8 +40,8 @@ client.on ('message', async(message) =>{
     async function execute(message, serverQueue){
         let vc = message.member.voice.channel;
         if(!vc){
-            return message.channel.send("you'll need to be in a voice channel first!")
-        } else {
+            return message.channel.send("Please join a voice chat first");
+        }else{
             let result = await searcher.search(args.join(" "), { type: "video" })
             const songInfo = await ytdl.getInfo(result.first.url)
  
@@ -82,32 +50,32 @@ client.on ('message', async(message) =>{
                 url: songInfo.videoDetails.video_url
             };
  
-        } if(!serverQueue){
-            const queueConstructor = {
-                txtChannel: message.channel,
-                vChannel: vc,
-                connection: null,
-                songs: [],
-                volume: 10,
-                playing: true
-            };
-            queue.set(message.guild.id, queueConstructor);
+            if(!serverQueue){
+                const queueConstructor = {
+                    txtChannel: message.channel,
+                    vChannel: vc,
+                    connection: null,
+                    songs: [],
+                    volume: 10,
+                    playing: true
+                };
+                queue.set(message.guild.id, queueConstructor);
  
-            queueConstructor.songs.push(song);
+                queueConstructor.songs.push(song);
  
-            try{
-                let connection = await vc.join();
-                queueConstructor.connection = connection;
-                play(message.guild, queueConstructor.songs[0]);
-            }catch (err){
-                console.error(err);
-                queue.delete(message.guild.id);
-                message.channel.send(`unable to connect!`);
-                throw err;
+                try{
+                    let connection = await vc.join();
+                    queueConstructor.connection = connection;
+                    play(message.guild, queueConstructor.songs[0]);
+                }catch (err){
+                    console.error(err);
+                    queue.delete(message.guild.id);
+                    return message.channel.send(`Unable to join the voice chat ${err}`)
+                }
+            }else{
+                serverQueue.songs.push(song);
+                return message.channel.send(`The song has been added ${song.url}`);
             }
-        }else{
-            serverQueue.songs.push(song);
-            return message.channel.send(`**${song.title}** has been added to queue!`);
         }
     }
     function play(guild, song){
@@ -123,23 +91,38 @@ client.on ('message', async(message) =>{
                 serverQueue.songs.shift();
                 play(guild, serverQueue.songs[0]);
             })
+            serverQueue.txtChannel.send(`Now playing ${serverQueue.songs[0].url}`)
     }
-    function leave (message, serverQueue){
-        if (!message.member.voice.channel)
-            return message.channel.send("you'll need to be in a voice channel for me to leave!");
-        serverQueue.songs = []; 
+    function stop (message, serverQueue){
+        if(!message.member.voice.channel)
+            return message.channel.send("You need to join the voice chat first!")
+        serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
     }
     function skip (message, serverQueue){
         if(!message.member.voice.channel)
-            return message.channel.send("you'll need to be in a voice channel to skip the song!");
+            return message.channel.send("You need to join the voice chat first");
         if(!serverQueue)
-            return message.channel.send("the queue is empty!");
+            return message.channel.send("There is nothing to skip!");
         serverQueue.connection.dispatcher.end();
     }
- 
+})
+
+
+client.on("message", message  => {
+    if(message.content == 'jebac'){
+        message.channel
+            .send({
+                embed: {
+                    title: "jebac edward",
+                    description: "zareaguj by wyjebac edawrda",
+            
+                },
+    })
+            .then((message) => {
+                message.react("👌");
+            });
+        }
 });
- 
- 
- 
+   
 client.login(process.env.token);
