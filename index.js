@@ -20,6 +20,8 @@ client.on("ready", () => {
 client.on("message", async(message) => {
     const prefix = '!';
  
+    if(!message,content.startsWith(prefix)) return
+
     const serverQueue = queue.get(message.guild.id);
  
     const args = message.content.slice(prefix.length).trim().split(/ +/g)
@@ -94,12 +96,17 @@ client.on("message", async(message) => {
             serverQueue.txtChannel.send(`Now playing ${serverQueue.songs[0].url}`)
     }
     function stop (message, serverQueue){
+if(!serverQueue)
+return message.channel.send("nie gra tu żadna muzyka!")
+
         if(!message.member.voice.channel)
             return message.channel.send("You need to join the voice chat first!")
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
     }
     function skip (message, serverQueue){
+        if(!serverQueue)
+return message.channel.send("nie gra tu żadna muzyka!")
         if(!message.member.voice.channel)
             return message.channel.send("You need to join the voice chat first");
         if(!serverQueue)
